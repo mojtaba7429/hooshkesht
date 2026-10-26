@@ -631,12 +631,9 @@ async function callLLMWithTimeout(messages, model) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
     try {
-        // درخواست به Worker (که کلید API را امن نگه می‌دارد)
         const res = await fetch(`${WORKER_URL}/api/ai`, {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ model, messages, temperature: 0.5, max_tokens: 1500 }),
             signal: controller.signal
         });
