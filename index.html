@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>هوش‌کشت Agent - GPS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: 'Vazirmatn', sans-serif; background: linear-gradient(to bottom, #e8f5e9, #ffffff); margin: 0; padding: 0; color: #333; }
+        header { background: linear-gradient(135deg, #00695c, #00897b); color: white; text-align: center; padding: 30px 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        h1 { margin: 0; font-size: 2.4em; font-weight: 700; }
+        .subtitle { font-size: 1.15em; margin: 10px 0; opacity: 0.95; }
+        .developer { font-size: 1em; margin-top: 12px; opacity: 0.9; }
+        .agent-badge { display: inline-block; background: #ff5722; color: white; padding: 4px 14px; border-radius: 20px; font-size: 0.85em; margin-top: 10px; font-weight: 600; }
+        .container { max-width: 1100px; margin: 0 auto; padding: 20px; }
+        .update-btn { display: block; width: 90%; max-width: 400px; margin: 20px auto; padding: 15px; background: #ff5722; color: white; border: none; border-radius: 30px; font-size: 1.1em; font-family: inherit; cursor: pointer; transition: all 0.3s ease; font-weight: 600; }
+        .update-btn:hover { background: #e64a19; transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0,0,0,0.2); }
+        #last-update { text-align: center; margin: 10px 0; color: #666; font-size: 0.95em; }
+
+        /* بخش GPS */
+        .gps-section {
+            background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+            border-radius: 18px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 6px 20px rgba(0,100,0,0.12);
+            border-right: 6px solid #4caf50;
+        }
+        .gps-title { color: #2e7d32; margin-top: 0; font-size: 1.3em; text-align: center; }
+        .gps-hint { text-align: center; color: #555; font-size: 0.9em; margin-bottom: 15px; }
+        .gps-inputs { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+        .gps-input {
+            padding: 12px 15px;
+            border: 2px solid #81c784;
+            border-radius: 22px;
+            font-family: inherit;
+            font-size: 1em;
+            width: 180px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        .gps-input:focus { border-color: #4caf50; }
+        .gps-buttons { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 15px; }
+        .btn-gps-primary {
+            background: #4caf50;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 22px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: 600;
+            font-size: 0.95em;
+            transition: all 0.3s;
+        }
+        .btn-gps-primary:hover { background: #388e3c; transform: translateY(-2px); }
+        .btn-gps-secondary {
+            background: #2196f3;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 22px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: 600;
+            font-size: 0.95em;
+            transition: all 0.3s;
+        }
+        .btn-gps-secondary:hover { background: #1976d2; transform: translateY(-2px); }
+        .location-status {
+            text-align: center;
+            margin-top: 12px;
+            padding: 8px 15px;
+            background: white;
+            border-radius: 15px;
+            font-size: 0.9em;
+            color: #2e7d32;
+            font-weight: 600;
+            display: inline-block;
+            width: 100%;
+        }
+        .location-status.error { color: #c62828; background: #ffebee; }
+
+        /* پیشنهادهای سریع موقعیت */
+        .preset-locations {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 12px;
+        }
+        .preset-btn {
+            background: rgba(255,255,255,0.7);
+            color: #1b5e20;
+            border: 1px solid #81c784;
+            padding: 6px 14px;
+            border-radius: 16px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.85em;
+            transition: all 0.2s;
+        }
+        .preset-btn:hover { background: white; }
+
+        .weather-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 15px; padding: 20px 0; }
+        .card { background: #f1f8e9; border-radius: 14px; padding: 18px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-right: 5px solid #81c784; transition: transform 0.3s ease; }
+        .card:hover { transform: translateY(-5px); }
+        .card h3 { color: #2e7d32; margin: 0 0 8px 0; font-size: 1.2em; }
+        .big-text { font-size: 2em; font-weight: 700; margin: 8px 0; color: #1b5e20; }
+        .pressure-status { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 10px; padding: 8px 15px; border-radius: 20px; font-weight: 600; font-size: 1em; }
+        .pressure-good { background-color: #e8f5e9; color: #2e7d32; border: 2px solid #4caf50; }
+        .pressure-medium { background-color: #fff3e0; color: #ef6c00; border: 2px solid #ff9800; }
+        .pressure-bad { background-color: #ffebee; color: #c62828; border: 2px solid #f44336; }
+        .pressure-indicator { width: 20px; height: 20px; border-radius: 50%; display: inline-block; }
+        .indicator-good { background-color: #4caf50; box-shadow: 0 0 10px #4caf50; }
+        .indicator-medium { background-color: #ff9800; box-shadow: 0 0 10px #ff9800; }
+        .indicator-bad { background-color: #f44336; box-shadow: 0 0 10px #f44336; }
+        .warning { background: #ffebee; border-right: 5px solid #e57373; margin: 8px 0; padding: 12px; border-radius: 10px; text-align: center; font-size: 0.95em; color: #c62828; }
+        .forecast-section { padding: 20px 0; }
+        .section-title { text-align: center; color: #00695c; margin-bottom: 25px; font-size: 1.8em; position: relative; padding-bottom: 10px; }
+        .section-title::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 100px; height: 3px; background: #4caf50; border-radius: 2px; }
+        .forecast-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-top: 20px; }
+        .forecast-card { background: #e8f5e9; border-radius: 12px; padding: 18px; text-align: center; box-shadow: 0 3px 8px rgba(0,0,0,0.1); border-top: 4px solid #4caf50; transition: all 0.3s ease; }
+        .forecast-card:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.15); }
+        .forecast-day { font-weight: 700; color: #2e7d32; font-size: 1.05em; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px dashed #b2dfdb; }
+        .forecast-temp { display: flex; justify-content: center; gap: 12px; margin: 12px 0; font-size: 1.15em; }
+        .temp-max { color: #f44336; font-weight: 700; }
+        .temp-min { color: #2196f3; font-weight: 700; }
+        .forecast-pop { background: linear-gradient(135deg, #bbdefb, #90caf9); padding: 5px 12px; border-radius: 20px; font-size: 0.9em; margin-top: 10px; display: inline-block; font-weight: 600; color: #1565c0; }
+        .forecast-pop.high { background: linear-gradient(135deg, #ffcdd2, #ef9a9a); color: #c62828; }
+        .agent-section { background: linear-gradient(135deg, #f8fdf8 0%, #e8f5e9 100%); border-radius: 18px; padding: 25px; margin: 30px 0; box-shadow: 0 8px 25px rgba(0,100,0,0.1); border-right: 6px solid #4caf50; border-left: 6px solid #81c784; }
+        .agent-controls { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-bottom: 20px; }
+        .agent-controls button { padding: 10px 18px; border: none; border-radius: 20px; cursor: pointer; font-family: inherit; font-size: 0.95em; font-weight: 600; transition: all 0.3s ease; }
+        .btn-primary { background: #4caf50; color: white; }
+        .btn-primary:hover { background: #388e3c; }
+        .btn-secondary { background: #2196f3; color: white; }
+        .btn-secondary:hover { background: #1976d2; }
+        .btn-danger { background: #f44336; color: white; }
+        .btn-danger:hover { background: #c62828; }
+        .agent-status { background: #fff3e0; border-right: 4px solid #ff9800; padding: 12px 18px; border-radius: 10px; margin-bottom: 15px; font-size: 0.95em; color: #ef6c00; display: flex; align-items: center; gap: 10px; }
+        .agent-status.thinking { background: #e3f2fd; color: #1565c0; border-color: #2196f3; }
+        .agent-status.done { background: #e8f5e9; color: #2e7d32; border-color: #4caf50; }
+        .agent-status.error { background: #ffebee; color: #c62828; border-color: #f44336; }
+        .pulse-dot { width: 10px; height: 10px; border-radius: 50%; background: currentColor; animation: pulse-anim 1.5s infinite; }
+        @keyframes pulse-anim { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(1.3); } }
+        #chat-container { background: white; border-radius: 14px; padding: 20px; font-size: 1.05em; line-height: 1.8; text-align: right; box-shadow: 0 5px 15px rgba(0,0,0,0.05); border: 1px solid #c8e6c9; min-height: 250px; max-height: 550px; overflow-y: auto; margin-bottom: 15px; }
+        .chat-message { margin: 12px 0; padding: 12px 18px; border-radius: 18px; max-width: 88%; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .user-message { background: #e8f5e9; margin-left: auto; border-bottom-left-radius: 4px; }
+        .ai-message { background: #e3f2fd; border-bottom-right-radius: 4px; }
+        .loading-message { background: #f5f5f5; color: #666; }
+        #chat-input-container { display: flex; gap: 10px; }
+        #chat-input { flex: 1; padding: 14px 18px; border: 2px solid #81c784; border-radius: 30px; font-size: 1.05em; font-family: inherit; outline: none; transition: border-color 0.3s; }
+        #chat-input:focus { border-color: #4caf50; }
+        #chat-send-btn { padding: 0 28px; background: #4caf50; color: white; border: none; border-radius: 30px; font-size: 1.05em; font-family: inherit; cursor: pointer; min-width: 110px; font-weight: 600; transition: background 0.3s; }
+        #chat-send-btn:hover { background: #388e3c; }
+        #chat-send-btn:disabled { background: #ccc; cursor: not-allowed; }
+        .quick-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+        .quick-action { background: #c8e6c9; color: #1b5e20; padding: 6px 14px; border-radius: 16px; font-size: 0.85em; cursor: pointer; border: none; font-family: inherit; transition: all 0.2s; }
+        .quick-action:hover { background: #a5d6a7; }
+        .tool-log { background: #263238; color: #aed581; padding: 12px 16px; border-radius: 10px; font-family: 'Courier New', monospace; font-size: 0.8em; direction: ltr; text-align: left; margin-top: 10px; max-height: 250px; overflow-y: auto; display: none; }
+        .tool-log.show { display: block; }
+        .tool-log .log-line { margin: 3px 0; }
+        .tool-log .log-tool { color: #64b5f6; }
+        .tool-log .log-result { color: #81c784; }
+        .tool-log .log-thought { color: #ffb74d; }
+        .tool-log .log-error { color: #ef5350; }
+        .tool-log .log-retry { color: #ffb74d; font-weight: bold; }
+        .model-info { text-align: center; font-size: 0.85em; color: #666; margin-top: 8px; padding: 6px 12px; background: #f5f5f5; border-radius: 12px; display: inline-block; }
+        footer { text-align: center; padding: 20px; background: #004d40; color: white; margin-top: 30px; font-size: 0.95em; border-top: 5px solid #4caf50; }
+        @media (max-width: 768px) { .forecast-container { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); } .weather-grid { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); } h1 { font-size: 1.9em; } .gps-input { width: 140px; } }
+        @media (max-width: 480px) { .forecast-container { grid-template-columns: 1fr; } #chat-input-container { flex-direction: column; } #chat-send-btn { padding: 12px; } .gps-input { width: 100%; } }
+    </style>
+</head>
+<body>
+<header>
+    <h1>🌾 هوش‌کشت Agent</h1>
+    <p class="subtitle">دستیار هوشمند کشاورزی مبتنی بر Agent — هر نقطه، هر مزرعه</p>
+    <p class="developer">توسعه‌یافته توسط مجتبی یعقوبی</p>
+    <span class="agent-badge">📍 نسخه GPS فعال</span>
+</header>
+
+<div class="container">
+
+    <!-- بخش ورودی GPS -->
+    <section class="gps-section">
+        <h2 class="gps-title">📍 موقعیت مزرعه یا باغ خود را وارد کنید</h2>
+        <p class="gps-hint">مختصات جغرافیایی محل خود را وارد کنید تا تمام داده‌ها و توصیه‌ها برای همان نقطه شخصی‌سازی شود.</p>
+        
+        <div class="gps-inputs">
+            <input type="number" step="any" id="user-lat" class="gps-input" placeholder="عرض جغرافیایی (مثال: 35.02)" value="35.026369">
+            <input type="number" step="any" id="user-lon" class="gps-input" placeholder="طول جغرافیایی (مثال: 58.78)" value="58.785045">
+        </div>
+        
+        <div class="gps-buttons">
+            <button class="btn-gps-primary" onclick="updateLocationAndFetch()">
+                📍 دریافت اطلاعات این موقعیت
+            </button>
+            <button class="btn-gps-secondary" onclick="getCurrentLocation()">
+                📡 موقعیت فعلی من
+            </button>
+        </div>
+        
+        <div id="location-status" class="location-status">
+            📍 موقعیت فعلی: مه‌ولات (پیش‌فرض)
+        </div>
+        
+        <div class="preset-locations">
+            <button class="preset-btn" onclick="setPreset(35.026369, 58.785045, 'مه‌ولات')">🌾 مه‌ولات</button>
+            <button class="preset-btn" onclick="setPreset(34.352865, 58.680542, 'گناباد')">🌰 گناباد</button>
+            <button class="preset-btn" onclick="setPreset(36.297, 59.606, 'مشهد')">🏙️ مشهد</button>
+            <button class="preset-btn" onclick="setPreset(34.091, 58.204, 'فردوس')">🌾 فردوس</button>
+            <button class="preset-btn" onclick="setPreset(33.978, 58.849, 'قائن')">🌰 قائن</button>
+        </div>
+    </section>
+
+    <button class="update-btn" onclick="updateWeatherAndForecast()">
+        🔄 دریافت مجدد اطلاعات
+    </button>
+
+    <div id="last-update">آخرین بروزرسانی: —</div>
+
+    <div id="weather-content"></div>
+
+    <div id="forecast-section" class="forecast-section" style="display: none;">
+        <h2 class="section-title">🌤️ پیش‌بینی ۵ روز آینده</h2>
+        <div id="forecast-container" class="forecast-container"></div>
+    </div>
+
+    <section class="agent-section">
+        <h2 class="section-title">🤖 دستیار Agent هوش‌کشت</h2>
+        <p style="text-align:center; color:#555; margin-bottom:10px; font-size:0.95em;">
+            این Agent خودش فکر می‌کند، ابزارها را صدا می‌زند و برای موقعیت شما تصمیم می‌گیرد
+        </p>
+        <div style="text-align:center;">
+            <span class="model-info" id="model-info">🧠 مدل: openrouter/free</span>
+        </div>
+
+        <div class="agent-controls" style="margin-top:20px;">
+            <button class="btn-primary" onclick="runAgentTask('fullAnalysis')">📊 تحلیل کامل امروز</button>
+            <button class="btn-secondary" onclick="runAgentTask('irrigationPlan')">💧 برنامه آبیاری هفته</button>
+            <button class="btn-secondary" onclick="runAgentTask('sprayingPlan')">🌿 زمان سم‌پاشی</button>
+            <button class="btn-secondary" onclick="runAgentTask('cropAdvisor')">🌱 مشاوره محصولات</button>
+            <button class="btn-danger" onclick="clearAgentMemory()">🗑️ پاک کردن حافظه</button>
+            <button class="btn-secondary" onclick="toggleToolLog()">🔍 نمایش/مخفی لاگ</button>
+        </div>
+
+        <div id="agent-status" class="agent-status">
+            <span class="pulse-dot"></span>
+            <span>Agent آماده است</span>
+        </div>
+
+        <div id="chat-container">
+            <div class="chat-message ai-message">
+                <strong>🌾 هوش‌کشت Agent:</strong><br>
+                سلام! من نسخه GPS هستم. اول موقعیت مزرعه‌تون رو وارد کنید، بعد سؤالتون رو بپرسید.<br>
+                تمام توصیه‌ها مخصوص <strong>همان نقطه</strong> خواهد بود.
+            </div>
+        </div>
+
+        <div id="tool-log" class="tool-log"></div>
+
+        <div id="chat-input-container">
+            <input type="text" id="chat-input" placeholder="سؤالت رو بنویس..." onkeypress="if(event.key === 'Enter') sendAgentMessage()">
+            <button id="chat-send-btn" onclick="sendAgentMessage()">ارسال</button>
+        </div>
+
+        <div class="quick-actions">
+            <button class="quick-action" onclick="quickAsk('امروز هوا چطوره؟')">☀️ هوا امروز</button>
+            <button class="quick-action" onclick="quickAsk('کی آبیاری کنم؟')">💧 آبیاری</button>
+            <button class="quick-action" onclick="quickAsk('برای زعفران چیکار کنم؟')">🌾 زعفران</button>
+            <button class="quick-action" onclick="quickAsk('کی سم‌پاشی کنم؟')">🌿 سم‌پاشی</button>
+            <button class="quick-action" onclick="quickAsk('هشدار سرما هست؟')">❄️ هشدار سرما</button>
+        </div>
+    </section>
+</div>
+
+<footer>
+    © ۱۴۰۴ مجتبی یعقوبی | هوش‌کشت Agent — توسعه سامانه هوشمند کشاورزی
+</footer>
+
+<script>
+// ============================================================
+//                        تنظیمات
+// ============================================================
+const API_KEY = "f93145944644f0f614eab5ccd43309c0";
+const DEFAULT_LAT = 35.026369037212014;
+const DEFAULT_LON = 58.785045696935896;
+
+// موقعیت فعلی کاربر (قابل تغییر با GPS)
+let userLat = DEFAULT_LAT;
+let userLon = DEFAULT_LON;
+let locationName = "مه‌ولات";
+
+const OPENROUTER_API_KEY = "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";
+const PRIMARY_MODEL = "openrouter/free";
+const FALLBACK_MODELS = [];
+
+const MAX_RETRIES = 3;
+const RETRY_DELAY_MS = 2000;
+const REQUEST_TIMEOUT_MS = 120000;
+
+const DEBUG = true;
+function debugLog(...args) {
+    if (DEBUG) console.log('%c[هوش‌کشت GPS]', 'color:#4caf50;font-weight:bold;', ...args);
+}
+
+// ============================================================
+//                    متغیرهای جهانی
+// ============================================================
+let currentWeatherData = null;
+let forecastProcessedData = null;
+let agentMemory = { shortTerm: [], longTerm: {} };
+let toolLogVisible = false;
+let activeModel = PRIMARY_MODEL;
+
+// ============================================================
+//                    توابع GPS
+// ============================================================
+function setPreset(lat, lon, name) {
+    document.getElementById('user-lat').value = lat;
+    document.getElementById('user-lon').value = lon;
+    updateLocationAndFetch();
+}
+
+function getCurrentLocation() {
+    const statusEl = document.getElementById('location-status');
+    
+    if (!navigator.geolocation) {
+        statusEl.textContent = "❌ مرورگر شما از موقعیت‌یابی پشتیبانی نمی‌کند.";
+        statusEl.classList.add('error');
+        return;
+    }
+    
+    statusEl.textContent = "⏳ در حال دریافت موقعیت...";
+    statusEl.classList.remove('error');
+    
+    navigator.geolocation.getCurrentPosition(
+        (position) => {
+            const lat = position.coords.latitude;
+            const lon = position.coords.longitude;
+            
+            document.getElementById('user-lat').value = lat.toFixed(6);
+            document.getElementById('user-lon').value = lon.toFixed(6);
+            
+            // بررسی اینکه آیا در منطقه مه‌ولات هستیم یا نه
+            const distance = calculateDistance(lat, lon, DEFAULT_LAT, DEFAULT_LON);
+            locationName = distance < 50 ? "نزدیک مه‌ولات" : "موقعیت شما";
+            
+            updateLocationAndFetch();
+        },
+        (error) => {
+            let msg = "خطا در دریافت موقعیت: ";
+            switch(error.code) {
+                case error.PERMISSION_DENIED: msg += "دسترسی رد شد"; break;
+                case error.POSITION_UNAVAILABLE: msg += "موقعیت در دسترس نیست"; break;
+                case error.TIMEOUT: msg += "زمان تمام شد"; break;
+                default: msg += error.message;
+            }
+            statusEl.textContent = "❌ " + msg;
+            statusEl.classList.add('error');
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+}
+
+function calculateDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371; // شعاع زمین به کیلومتر
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+}
+
+async function updateLocationAndFetch() {
+    const latInput = document.getElementById('user-lat').value.trim();
+    const lonInput = document.getElementById('user-lon').value.trim();
+    const statusEl = document.getElementById('location-status');
+    
+    if (!latInput || !lonInput) {
+        statusEl.textContent = "❌ لطفاً هر دو مختصات را وارد کنید.";
+        statusEl.classList.add('error');
+        return;
+    }
+    
+    const lat = parseFloat(latInput);
+    const lon = parseFloat(lonInput);
+    
+    if (isNaN(lat) || isNaN(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180) {
+        statusEl.textContent = "❌ مختصات وارد شده نامعتبر است.";
+        statusEl.classList.add('error');
+        return;
+    }
+    
+    userLat = lat;
+    userLon = lon;
+    
+    // تشخیص نام مکان
+    const distance = calculateDistance(lat, lon, DEFAULT_LAT, DEFAULT_LON);
+    if (distance < 10) locationName = "مه‌ولات";
+    else if (distance < 50) locationName = "حومه مه‌ولات";
+    else locationName = `موقعیت (${lat.toFixed(2)}, ${lon.toFixed(2)})`;
+    
+    statusEl.textContent = `✅ موقعیت ثبت شد: ${locationName} — ${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+    statusEl.classList.remove('error');
+    
+    // پاک کردن داده‌های قبلی
+    currentWeatherData = null;
+    forecastProcessedData = null;
+    
+    // دریافت اطلاعات جدید
+    await updateWeatherAndForecast();
+    
+    // پیام در چت
+    const chatContainer = document.getElementById('chat-container');
+    chatContainer.innerHTML += `
+        <div class="chat-message agent-message">
+            📍 موقعیت شما ثبت شد: <strong>${locationName}</strong><br>
+            مختصات: ${lat.toFixed(4)}, ${lon.toFixed(4)}<br>
+            تمام توصیه‌ها از این لحظه برای این نقطه است.
+        </div>
+    `;
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+    
+    debugLog(`📍 موقعیت جدید: ${lat}, ${lon} (${locationName})`);
+}
+
+// ============================================================
+//                  توابع کمکی هواشناسی
+// ============================================================
+function getPressureStatus(pressure) {
+    if (pressure >= 1015) return { status: "خوب", class: "pressure-good", indicator: "indicator-good", desc: "هوا پایدار و آفتابی" };
+    if (pressure >= 1000) return { status: "متوسط", class: "pressure-medium", indicator: "indicator-medium", desc: "هوا متغیر" };
+    return { status: "بد", class: "pressure-bad", indicator: "indicator-bad", desc: "هوا ناپایدار" };
+}
+function windDirection(deg) {
+    if (typeof deg !== 'number') return 'نامشخص';
+    const dirs = ["شمال","شمال‌شرقی","شرق","جنوب‌شرقی","جنوب","جنوب‌غربی","غربی","شمال‌غربی"];
+    return dirs[Math.floor((deg + 22.5) / 45) % 8];
+}
+function buildWarnings(data) {
+    const w = [];
+    if (data?.main?.temp_min < 5) w.push("❄️ هشدار سرما");
+    if (data?.wind?.speed > 12 / 3.6) w.push("💨 هشدار باد شدید");
+    if (data?.rain?.['1h'] || data?.rain?.['3h']) w.push("🌧️ بارندگی اخیر");
+    if (data?.main?.humidity > 85) w.push("💦 رطوبت بالا");
+    if (data?.main?.pressure < 1000) w.push("⚠️ فشار پایین");
+    return w;
+}
+
+async function fetchCurrentWeather() {
+    try {
+        const res = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${userLat}&lon=${userLon}&appid=${API_KEY}&units=metric&lang=fa`);
+        if (!res.ok) throw new Error('خطا در دریافت وضعیت فعلی');
+        return await res.json();
+    } catch (err) { console.error('خطا:', err); return null; }
+}
+
+async function getForecast() {
+    try {
+        const res = await fetch(`https://api.openweathermap.org/data/2.5/forecast?lat=${userLat}&lon=${userLon}&appid=${API_KEY}&units=metric&lang=fa&cnt=40`);
+        if (!res.ok) throw new Error('خطا در دریافت پیش‌بینی');
+        return await res.json();
+    } catch (err) { console.error('خطا:', err); return null; }
+}
+
+function processForecastData(forecastData) {
+    if (!forecastData?.list) return [];
+    const daily = {};
+    const persianDays = ['یکشنبه','دوشنبه','سه‌شنبه','چهارشنبه','پنجشنبه','جمعه','شنبه'];
+    forecastData.list.forEach(item => {
+        const date = new Date(item.dt * 1000);
+        const key = date.toLocaleDateString('fa-IR');
+        const dayName = persianDays[date.getDay()];
+        if (!daily[key]) daily[key] = { date: key, dayName, temps: [], conditions: [], humidity: [], wind: [], pop: [] };
+        daily[key].temps.push(item.main.temp);
+        daily[key].conditions.push(item.weather[0].description);
+        daily[key].humidity.push(item.main.humidity);
+        daily[key].wind.push(item.wind.speed);
+        daily[key].pop.push(item.pop * 100);
+    });
+    const avg = arr => arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : 0;
+    const mostFreq = arr => {
+        if (!arr.length) return '';
+        const counts = {};
+        arr.forEach(v => counts[v] = (counts[v] || 0) + 1);
+        return Object.keys(counts).reduce((a,b)=>counts[a]>counts[b]?a:b);
+    };
+    return Object.values(daily).map(day => ({
+        date: day.date,
+        dayName: day.dayName,
+        temp_min: Math.min(...day.temps).toFixed(1),
+        temp_max: Math.max(...day.temps).toFixed(1),
+        condition: mostFreq(day.conditions),
+        humidity: avg(day.humidity).toFixed(0),
+        wind_speed: (avg(day.wind) * 3.6).toFixed(1),
+        pop: avg(day.pop).toFixed(0)
+    })).slice(0, 5);
+}
+
+// ============================================================
+//                       نمایش داده
+// ============================================================
+function displayCurrentWeather(data) {
+    if (!data) return '<p style="text-align:center; color:#c62828; padding:20px;">داده‌های فعلی در دسترس نیست</p>';
+    const temp = data.main?.temp?.toFixed(1) ?? '—';
+    const feels = data.main?.feels_like?.toFixed(1) ?? '—';
+    const humidity = data.main?.humidity ?? '—';
+    const pressure = data.main?.pressure ?? '—';
+    const desc = data.weather?.[0]?.description ?? '—';
+    const clouds = data.clouds?.all ?? '—';
+    const windSpeed = (data.wind?.speed * 3.6 || 0).toFixed(1);
+    const windDir = windDirection(data.wind?.deg);
+    const pressureInfo = getPressureStatus(pressure);
+    const warnings = buildWarnings(data);
+    return `
+    <div class="weather-grid">
+        <div class="card"><h3>وضعیت فعلی</h3><p style="font-size:1.1em;">${desc}</p><p>پوشش ابر: ${clouds}%</p></div>
+        <div class="card"><h3>دما</h3><div class="big-text">${temp}°C</div><p>حس واقعی: ${feels}°C</p></div>
+        <div class="card"><h3>رطوبت</h3><div class="big-text">${humidity}%</div></div>
+        <div class="card"><h3>فشار هوا</h3><div class="big-text">${pressure} hPa</div><div class="pressure-status ${pressureInfo.class}"><span class="pressure-indicator ${pressureInfo.indicator}"></span>${pressureInfo.status}</div></div>
+        <div class="card"><h3>باد</h3><div class="big-text">${windSpeed} km/h</div><p>جهت: ${windDir}</p></div>
+        <div class="card"><h3>هشدارها</h3>${warnings.length ? warnings.map(w => `<div class="warning">${w}</div>`).join('') : '<p>هشدار خاصی وجود ندارد</p>'}</div>
+    </div>`;
+}
+
+function displayForecast(forecastData) {
+    const container = document.getElementById('forecast-container');
+    container.innerHTML = '';
+    const days = processForecastData(forecastData);
+    if (!days.length) { container.innerHTML = '<p style="text-align:center; color:#666; padding:20px;">پیش‌بینی در دسترس نیست</p>'; return; }
+    days.forEach(day => {
+        const popClass = day.pop > 50 ? 'high' : '';
+        container.insertAdjacentHTML('beforeend', `
+        <div class="forecast-card">
+            <div class="forecast-day">${day.dayName} - ${day.date}</div>
+            <div class="forecast-temp"><span class="temp-max">${day.temp_max}°C</span> / <span class="temp-min">${day.temp_min}°C</span></div>
+            <div>${day.condition}</div>
+            <div class="forecast-pop ${popClass}">بارش: ${day.pop}%</div>
+            <div>رطوبت: ${day.humidity}% | باد: ${day.wind_speed} km/h</div>
+        </div>`);
+    });
+}
+
+async function updateWeatherAndForecast() {
+    const weatherEl = document.getElementById('weather-content');
+    const forecastSection = document.getElementById('forecast-section');
+    const lastUpdateEl = document.getElementById('last-update');
+    weatherEl.innerHTML = '<p style="text-align:center; padding:20px;">در حال دریافت اطلاعات...</p>';
+    lastUpdateEl.textContent = 'آخرین بروزرسانی: در حال دریافت...';
+    const [current, forecast] = await Promise.all([fetchCurrentWeather(), getForecast()]);
+    currentWeatherData = current;
+    forecastProcessedData = forecast ? processForecastData(forecast) : null;
+    weatherEl.innerHTML = displayCurrentWeather(current);
+    if (forecast) { forecastSection.style.display = 'block'; displayForecast(forecast); }
+    else { forecastSection.style.display = 'block'; document.getElementById('forecast-container').innerHTML = '<p style="text-align:center; color:#c62828; padding:20px;">خطا در دریافت پیش‌بینی</p>'; }
+    const now = new Date().toLocaleString('fa-IR');
+    lastUpdateEl.textContent = `آخرین بروزرسانی: ${now} | 📍 ${locationName}`;
+}
+
+// ============================================================
+//                       ابزارهای Agent (با موقعیت پویا)
+// ============================================================
+const TOOLS = {
+    get_current_weather: {
+        description: "دریافت وضعیت فعلی هوا در موقعیت کاربر",
+        parameters: {},
+        execute: async () => {
+            if (!currentWeatherData) currentWeatherData = await fetchCurrentWeather();
+            if (!currentWeatherData?.main) return { error: "داده هوا در دسترس نیست" };
+            return {
+                location: locationName,
+                coordinates: `${userLat.toFixed(4)}, ${userLon.toFixed(4)}`,
+                temp: currentWeatherData.main.temp,
+                humidity: currentWeatherData.main.humidity,
+                wind_speed_kmh: (currentWeatherData.wind?.speed * 3.6 || 0).toFixed(1),
+                description: currentWeatherData.weather?.[0]?.description
+            };
+        }
+    },
+    get_forecast: {
+        description: "دریافت پیش‌بینی ۵ روز آینده",
+        parameters: {},
+        execute: async () => {
+            if (!forecastProcessedData) {
+                const f = await getForecast();
+                forecastProcessedData = f ? processForecastData(f) : null;
+            }
+            return forecastProcessedData || { error: "پیش‌بینی در دسترس نیست" };
+        }
+    },
+    get_crop_info: {
+        description: "اطلاعات محصولات منطقه",
+        parameters: { crop: "نام محصول" },
+        execute: async ({ crop }) => {
+            const crops = {
+                "زعفران": { season: "پاییز", water_need: "کم", notes: "حساس به رطوبت و یخبندان" },
+                "پسته": { season: "بهار-تابستان", water_need: "متوسط", notes: "حساس به سرما در بهار" },
+                "انگور": { season: "بهار-تابستان", water_need: "متوسط" },
+                "گردو": { season: "بهار-تابستان", water_need: "زیاد" },
+                "زرشک": { season: "بهار-تابستان", water_need: "کم" },
+                "بادام": { season: "زمستان-بهار", water_need: "کم" }
+            };
+            if (crop && crops[crop]) return { crop, ...crops[crop] };
+            return { all_crops: crops };
+        }
+    },
+    calculate_water_need: {
+        description: "محاسبه نیاز آبی",
+        parameters: { crop: "محصول", temp: "دما", humidity: "رطوبت" },
+        execute: async ({ crop, temp, humidity }) => {
+            const base = { "زعفران": 20, "پسته": 40, "انگور": 35, "گردو": 45, "زرشک": 25, "بادام": 30 };
+            const b = base[crop] || 30;
+            let factor = 1;
+            if (temp > 30) factor += 0.3;
+            if (humidity < 30) factor += 0.2;
+            return { crop, recommended_liters_per_m2: (b * factor).toFixed(1), factor: factor.toFixed(2) };
+        }
+    },
+    check_frost_risk: {
+        description: "بررسی خطر یخبندان",
+        parameters: {},
+        execute: async () => {
+            if (!forecastProcessedData) {
+                const f = await getForecast();
+                forecastProcessedData = f ? processForecastData(f) : null;
+            }
+            const risks = forecastProcessedData
+                ? forecastProcessedData.filter(d => parseFloat(d.temp_min) < 3)
+                : [];
+            return {
+                has_risk: risks.length > 0,
+                risks: risks.map(d => ({ day: d.dayName, temp_min: d.temp_min })),
+                message: risks.length > 0 ? `⚠️ خطر یخبندان در ${risks.length} روز` : "✅ خطری نیست"
+            };
+        }
+    },
+    check_spraying_condition: {
+        description: "بررسی شرایط سم‌پاشی",
+        parameters: {},
+        execute: async () => {
+            if (!currentWeatherData) currentWeatherData = await fetchCurrentWeather();
+            if (!currentWeatherData?.main) return { error: "داده در دسترس نیست" };
+            const windKmh = (currentWeatherData.wind?.speed * 3.6 || 0);
+            const isWindOk = windKmh < 12;
+            const isTempOk = currentWeatherData.main.temp > 10 && currentWeatherData.main.temp < 28;
+            return {
+                suitable: isWindOk && isTempOk,
+                wind_ok: isWindOk,
+                temp_ok: isTempOk,
+                recommendation: (isWindOk && isTempOk) ? "✅ مناسب" : "❌ نامناسب"
+            };
+        }
+    },
+    search_agriculture_kb: {
+        description: "جستجو در دانش‌نامه",
+        parameters: { query: "موضوع" },
+        execute: async ({ query }) => {
+            const kb = {
+                "آبیاری": "صبح زود یا غروب آبیاری کنید",
+                "سم‌پاشی": "باد کمتر از ۱۲ km/h و بدون بارش",
+                "زعفران": "آبیاری اول پس از برداشت",
+                "یخبندان": "آبیاری شب قبل، پوشش گیاهان"
+            };
+            const q = query || "";
+            const results = Object.entries(kb)
+                .filter(([k]) => k.includes(q) || q.includes(k))
+                .map(([k, v]) => ({ topic: k, info: v }));
+            return results.length ? { results } : { message: "موردی یافت نشد", topics: Object.keys(kb) };
+        }
+    },
+    set_reminder: {
+        description: "ثبت یادآور",
+        parameters: { task: "کار", date: "تاریخ" },
+        execute: async ({ task, date }) => {
+            if (!agentMemory.longTerm.reminders) agentMemory.longTerm.reminders = [];
+            agentMemory.longTerm.reminders.push({ task, date, location: locationName, created: new Date().toISOString() });
+            return { success: true, message: `یادآور ثبت شد: ${task}`, location: locationName };
+        }
+    },
+    get_memory: {
+        description: "دریافت حافظه",
+        parameters: {},
+        execute: async () => agentMemory.longTerm
+    }
+};
+
+// ============================================================
+//                    Agent Core
+// ============================================================
+function setAgentStatus(text, type = "thinking") {
+    const el = document.getElementById('agent-status');
+    el.className = `agent-status ${type}`;
+    el.innerHTML = `<span class="pulse-dot"></span><span>${text}</span>`;
+}
+function logTool(toolName, args, result, thought = "", isError = false) {
+    const log = document.getElementById('tool-log');
+    const time = new Date().toLocaleTimeString('fa-IR');
+    let html = '';
+    if (thought) html += `<div class="log-line log-thought">[${time}] 💭 ${thought}</div>`;
+    const cls = isError ? 'log-error' : 'log-tool';
+    html += `<div class="log-line ${cls}">[${time}] ${isError ? '❌' : '🔧'} ${toolName}(${JSON.stringify(args)})</div>`;
+    html += `<div class="log-line log-result">   ↳ ${JSON.stringify(result).substring(0, 200)}</div>`;
+    log.insertAdjacentHTML('beforeend', html);
+    log.scrollTop = log.scrollHeight;
+}
+function logRetry(attempt, model, error) {
+    const log = document.getElementById('tool-log');
+    const time = new Date().toLocaleTimeString('fa-IR');
+    log.insertAdjacentHTML('beforeend', `<div class="log-line log-retry">[${time}] 🔄 تلاش ${attempt}/${MAX_RETRIES} - ${error}</div>`);
+    log.scrollTop = log.scrollHeight;
+}
+function toggleToolLog() { toolLogVisible = !toolLogVisible; document.getElementById('tool-log').classList.toggle('show', toolLogVisible); }
+function clearAgentMemory() {
+    agentMemory = { shortTerm: [], longTerm: {} };
+    document.getElementById('tool-log').innerHTML = '';
+    document.getElementById('chat-container').innerHTML = `<div class="chat-message ai-message"><strong>🌾 هوش‌کشت:</strong><br>حافظه پاک شد.</div>`;
+    setAgentStatus("حافظه پاک شد", "done");
+}
+
+function buildToolDescriptions() {
+    return Object.entries(TOOLS).map(([name, t]) => {
+        const params = Object.keys(t.parameters).length ? JSON.stringify(t.parameters) : "{}";
+        return `- ${name}(${params}): ${t.description}`;
+    }).join("\n");
+}
+
+function buildAgentSystemPrompt() {
+    return `تو "هوش‌کشت Agent" هستی، یک دستیار هوشمند کشاورزی.
+
+**سازنده:** فقط "آقای مهندس مجتبی یعقوبی".
+
+**📍 موقعیت کاربر:** ${locationName}
+**مختصات:** ${userLat.toFixed(4)}, ${userLon.toFixed(4)}
+**مهم:** تمام داده‌ها و توصیه‌ها بر اساس این موقعیت است، نه نقطه پیش‌فرض.
+
+**محصولات منطقه:** زعفران، پسته، انگور، گردو، زرشک، بادام
+
+**ابزارها:**
+${buildToolDescriptions()}
+
+**نحوه پاسخ:**
+فقط JSON خالص برگردان. یکی از دو فرمت:
+
+فرمت ۱ (ابزار):
+{"thought":"دلیل","action":"نام_ابزار","action_input":{...}}
+
+فرمت ۲ (پاسخ نهایی):
+{"thought":"دلیل","final_answer":"پاسخ تحلیلی فارسی حداقل ۵ خط"}
+
+**قوانین:**
+- فقط JSON
+- یک ابزار در هر مرحله
+- حداکثر ۵ مرحله
+- در پاسخ نهایی، به موقعیت ${locationName} اشاره کن
+- پاسخ باید تحلیلی و کاربردی باشه`;
+}
+
+async function callLLMWithTimeout(messages, model) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+    try {
+        const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
+                "HTTP-Referer": window.location.href,
+                "X-Title": "HooshKesht GPS Agent"
+            },
+            body: JSON.stringify({ model, messages, temperature: 0.5, max_tokens: 1500 }),
+            signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+        return res;
+    } catch (err) { clearTimeout(timeoutId); throw err; }
+}
+
+async function callLLMForAgent(messages) {
+    let lastError = null;
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+        try {
+            const res = await callLLMWithTimeout(messages, PRIMARY_MODEL);
+            if (res.ok) {
+                const data = await res.json();
+                const content = data?.choices?.[0]?.message?.content || "";
+                const actualModel = data?.model || PRIMARY_MODEL;
+                activeModel = actualModel;
+                document.getElementById('model-info').textContent = `🧠 مدل فعال: ${actualModel}`;
+                return content;
+            }
+            if (res.status === 401) throw new Error("کلید API نامعتبر");
+            if (res.status === 429) {
+                lastError = "محدودیت نرخ";
+                if (attempt < MAX_RETRIES) { await new Promise(r => setTimeout(r, RETRY_DELAY_MS * attempt)); continue; }
+                break;
+            }
+            lastError = `خطای ${res.status}`;
+            if (attempt < MAX_RETRIES) { await new Promise(r => setTimeout(r, RETRY_DELAY_MS)); continue; }
+            break;
+        } catch (err) {
+            lastError = err.message;
+            if (err.name === 'AbortError') lastError = "تایم‌اوت";
+            if (attempt < MAX_RETRIES) { await new Promise(r => setTimeout(r, RETRY_DELAY_MS * attempt)); continue; }
+            break;
+        }
+    }
+    throw new Error(lastError || "شکست در ارتباط");
+}
+
+function parseAgentResponse(text) {
+    if (!text) return { final_answer: null };
+    let cleaned = text.trim().replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
+    const start = cleaned.indexOf('{');
+    const end = cleaned.lastIndexOf('}');
+    if (start !== -1 && end !== -1) {
+        try {
+            const parsed = JSON.parse(cleaned.substring(start, end + 1));
+            if (parsed.final_answer && parsed.final_answer.length < 50 && !parsed.action) {
+                if (cleaned.length > parsed.final_answer.length) return { final_answer: cleaned };
+            }
+            return parsed;
+        } catch (e) {}
+    }
+    if (cleaned.length > 30) return { final_answer: cleaned };
+    return { final_answer: null };
+}
+
+async function runAgent(userMessage, maxSteps = 6) {
+    setAgentStatus("Agent در حال فکر کردن...", "thinking");
+    const messages = [{ role: "system", content: buildAgentSystemPrompt() }];
+    agentMemory.shortTerm.slice(-6).forEach(m => messages.push(m));
+    messages.push({ role: "user", content: userMessage });
+    let steps = 0;
+    let finalAnswer = "";
+    let retriedForFinal = false;
+
+    while (steps < maxSteps) {
+        steps++;
+        setAgentStatus(`Agent در حال فکر کردن... (${steps}/${maxSteps})`, "thinking");
+        let rawResponse;
+        try {
+            rawResponse = await callLLMForAgent(messages);
+        } catch (err) {
+            finalAnswer = `خطا: ${err.message}`;
+            setAgentStatus("خطا", "error");
+            break;
+        }
+        if (!rawResponse) { finalAnswer = "پاسخ خالی"; break; }
+        const parsed = parseAgentResponse(rawResponse);
+        if (parsed.final_answer) { finalAnswer = parsed.final_answer; break; }
+        if (parsed.action) {
+            const toolName = parsed.action;
+            const args = parsed.action_input || {};
+            if (!TOOLS[toolName]) {
+                messages.push({ role: "assistant", content: rawResponse });
+                messages.push({ role: "user", content: `ابزار "${toolName}" وجود ندارد.` });
+                continue;
+            }
+            try {
+                const result = await TOOLS[toolName].execute(args);
+                logTool(toolName, args, result, parsed.thought);
+                messages.push({ role: "assistant", content: rawResponse });
+                messages.push({ role: "user", content: `نتیجه ${toolName}:\n${JSON.stringify(result, null, 2)}\n\nپاسخ نهایی بده.` });
+            } catch (err) {
+                logTool(toolName, args, `خطا: ${err.message}`, parsed.thought, true);
+                messages.push({ role: "assistant", content: rawResponse });
+                messages.push({ role: "user", content: `خطا: ${err.message}` });
+            }
+            continue;
+        }
+        if (!retriedForFinal) {
+            retriedForFinal = true;
+            messages.push({ role: "assistant", content: rawResponse });
+            messages.push({
+                role: "user",
+                content: `پاسخ نهایی بده به فرمت: {"thought":"...","final_answer":"پاسخ تحلیلی فارسی"}.`
+            });
+            continue;
+        } else {
+            finalAnswer = rawResponse;
+            break;
+        }
+    }
+    if (!finalAnswer) finalAnswer = "نتوانستم پاسخ کامل بدهم.";
+    agentMemory.shortTerm.push({ role: "user", content: userMessage });
+    agentMemory.shortTerm.push({ role: "assistant", content: finalAnswer });
+    if (agentMemory.shortTerm.length > 20) agentMemory.shortTerm = agentMemory.shortTerm.slice(-20);
+    setAgentStatus(`Agent پاسخ داد ✅ (${locationName})`, "done");
+    return finalAnswer;
+}
+
+async function sendAgentMessage() {
+    const input = document.getElementById('chat-input');
+    const message = input.value.trim();
+    if (!message) return;
+    input.value = '';
+    await processAgentMessage(message);
+}
+function quickAsk(text) { document.getElementById('chat-input').value = text; sendAgentMessage(); }
+
+async function processAgentMessage(message) {
+    const chatContainer = document.getElementById('chat-container');
+    chatContainer.innerHTML += `<div class="chat-message user-message"><strong>شما:</strong><br>${message.replace(/\n/g, '<br>')}</div>`;
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+    const loadingId = 'loading-' + Date.now();
+    chatContainer.innerHTML += `<div id="${loadingId}" class="chat-message loading-message"><em>⏳ Agent در حال فکر کردن...</em></div>`;
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+    document.getElementById('chat-send-btn').disabled = true;
+    try {
+        const answer = await runAgent(message);
+        document.getElementById(loadingId)?.remove();
+        chatContainer.innerHTML += `<div class="chat-message ai-message"><strong>🌾 هوش‌کشت (${locationName}):</strong><br>${answer.replace(/\n/g, '<br>')}</div>`;
+    } catch (err) {
+        document.getElementById(loadingId)?.remove();
+        chatContainer.innerHTML += `<div class="chat-message ai-message" style="background:#ffebee;color:#c62828;"><strong>❌ خطا:</strong> ${err.message}</div>`;
+        setAgentStatus("خطا", "error");
+    } finally {
+        document.getElementById('chat-send-btn').disabled = false;
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+}
+
+async function runAgentTask(taskType) {
+    const tasks = {
+        fullAnalysis: `تحلیل کامل هوا و توصیه‌های کشاورزی برای موقعیت ${locationName} (${userLat.toFixed(2)}, ${userLon.toFixed(2)}) ارائه بده.`,
+        irrigationPlan: `برنامه آبیاری هفته برای موقعیت ${locationName} تهیه کن.`,
+        sprayingPlan: `بهترین زمان سم‌پاشی در ۵ روز آینده برای ${locationName} کی است؟`,
+        cropAdvisor: `توصیه‌های محصولات برای ${locationName} بده.`
+    };
+    await processAgentMessage(tasks[taskType] || "تحلیل کامل");
+}
+
+window.addEventListener('DOMContentLoaded', async () => {
+    debugLog("🌾 هوش‌کشت GPS راه‌اندازی شد");
+    debugLog(`📍 موقعیت پیش‌فرض: ${locationName} (${userLat}, ${userLon})`);
+    document.getElementById('model-info').textContent = `🧠 مدل: ${PRIMARY_MODEL}`;
+    updateWeatherAndForecast();
+    setAgentStatus("Agent آماده است - موقعیت خود را وارد کنید", "done");
+});
+</script>
+</body>
+</html>
